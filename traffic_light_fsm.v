@@ -3,7 +3,7 @@
 // Company: 
 // Engineer: 
 // 
-// Create Date: 03.01.2026 12:05:48
+// Create Date: 05.01.2026 1:05:50
 // Design Name: 
 // Module Name: traffic_light_fsm
 // Project Name: 
