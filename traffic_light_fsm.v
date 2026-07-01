@@ -1,23 +1,4 @@
 `timescale 1ns / 1ps
-//////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: 
-// 
-// Create Date: 05.01.2026 1:05:50
-// Design Name: 
-// Module Name: traffic_light_fsm
-// Project Name: 
-// Target Devices: 
-// Tool Versions: 
-// Description: 
-// 
-// Dependencies: 
-// 
-// Revision:
-// Revision 0.01 - File Created
-// Additional Comments:
-// 
-//////////////////////////////////////////////////////////////////////////////////
 
 
 module traffic_light_fsm(
@@ -30,82 +11,99 @@ module traffic_light_fsm(
     output reg green,
     output reg walk,
     output reg dont_walk
-    );
+);
     reg [1:0] current_state;
     reg [1:0] next_state;
     reg [4:0] timer;
-    parameter red_time    = 10;
-    parameter green_time  = 8;
+    
+    parameter red_time       = 10;
+    parameter green_time     = 8;
     parameter min_green_time = 5;
-    parameter yellow_time = 2;
+    parameter yellow_time    = 2;
+    
     parameter s_red    = 2'b00;
     parameter s_green  = 2'b01;
     parameter s_yellow = 2'b10;
-    always@(posedge clk)begin
-        if(reset)begin   next_state <= s_red;timer <= 0;end
-        else begin 
-            next_state <= current_state;
+
+    // 1. Sequential Logic: Update state and manage timer
+    always @(posedge clk) begin
+        if (reset) begin   
+            current_state <= s_red; 
+            timer <= 0;
+        end else begin 
+            current_state <= next_state;
+            
+            // Reset timer when state changes, otherwise increment
             if (current_state != next_state)
                 timer <= 0;
             else
                 timer <= timer + 1;
-            end
+        end
     end
-    always@(*)begin
+
+    // 2. Combinational Logic: Determine next state
+    always @(*) begin
+        // Default assignment to prevent inferred latches
+        next_state = current_state; 
+        
         case(current_state)
             s_red : begin 
-            if(timer==red_time-1)   next_state = s_green;
+                if (timer == red_time - 1)   
+                    next_state = s_green;
             end
             s_yellow : begin 
-            if(timer==yellow_time-1)   next_state = s_red;
+                if (timer == yellow_time - 1)   
+                    next_state = s_red;
             end
             s_green : begin 
                 if (timer >= min_green_time) begin
-                    if (ped_btn)
-                        next_state = s_yellow;
-                    else if (timer == green_time-1)
+                    // Note: Included both ped_btn and timer limit logic
+                    if (ped_btn || timer == green_time - 1)
                         next_state = s_yellow;
                 end
             end
             default : next_state = s_red;
         endcase
     end
-    always@(*)begin
-        red    = 1'b0;
-        yellow = 1'b0;
-        green  = 1'b0;
-        walk       = 1'b0;
-        dont_walk  = 1'b1;
+
+    // 3. Combinational Logic: Determine outputs based on current state
+    always @(*) begin
+        // Default outputs to prevent inferred latches
+        red       = 1'b0;
+        yellow    = 1'b0;
+        green     = 1'b0;
+        walk      = 1'b0;
+        dont_walk = 1'b1;
+        
         if (emergency) begin
-            green  = 1'b1;
-            red    = 1'b0;
-            yellow = 1'b0;
+            green     = 1'b1;
+            red       = 1'b0;
+            yellow    = 1'b0;
             dont_walk = 1'b1;
             walk      = 1'b0;
-        end
-        else begin
-                case(current_state)
-                s_red :begin
-                    red = 1'b1;
-                    walk       = 1'b1;
-                    dont_walk  = 1'b0;
-                    end
-                s_yellow: begin 
-                    yellow = 1'b1;
-                    dont_walk=1'b1;
-                    walk=1'b0;
-                    end
-                s_green :begin 
-                    green = 1'b1;
-                    dont_walk=1'b1;
-                    walk=1'b0;
-                    end
+        end else begin
+            case(current_state)
+                s_red : begin
+                    red       = 1'b1;
+                    walk      = 1'b1;
+                    dont_walk = 1'b0;
+                end
+                s_yellow : begin 
+                    yellow    = 1'b1;
+                    dont_walk = 1'b1;
+                    walk      = 1'b0;
+                end
+                s_green : begin 
+                    green     = 1'b1;
+                    dont_walk = 1'b1;
+                    walk      = 1'b0;
+                end
                 default: begin
-                    red        = 1'b1;
-                    dont_walk  = 1'b1;
-                    walk=1'b0;
-                    end
+                    red       = 1'b1;
+                    dont_walk = 1'b1;
+                    walk      = 1'b0;
+                end
             endcase
-            end
-    end    
+        end
+    end  
 endmodule
